@@ -47,7 +47,7 @@
   
   <div class="summary">
     <div class="metric">
-      <div class="metric-value">58</div>
+      <div class="metric-value">15</div>
       <div class="metric-label">Overall Score</div>
     </div>
     <div class="metric">
@@ -59,11 +59,11 @@
       <div class="metric-label">Critical Issues</div>
     </div>
     <div class="metric">
-      <div class="metric-value">3</div>
+      <div class="metric-value">7</div>
       <div class="metric-label">Tests Needed</div>
     </div>
     <div class="metric">
-      <div class="metric-value">2</div>
+      <div class="metric-value">8</div>
       <div class="metric-label">Refactorings</div>
     </div>
   </div>
@@ -72,25 +72,37 @@
   <ul>
       <li class="rec-critical">
         <span class="priority">[CRITICAL]</span>
-        <strong>security</strong>: Remediate all SQL injection vulnerabilities in src/todo.ts immediately before merging to production.
+        <strong>Security - SQL Injection</strong>: IMMEDIATE FIX REQUIRED: All three newly added functions (searchTodos, searchTodosByStatus, getTodosByUser) contain critical SQL injection vulnerabilities. User input is directly concatenated into SQL queries using template literals and string concatenation, allowing attackers to execute arbitrary SQL commands. This could lead to complete database compromise, data exfiltration, data deletion, or unauthorized access. These functions must be rewritten with parameterized queries before this PR can be merged.
+        <br><small>Files: src/todo.ts</small>
+      </li>
+    
+      <li class="rec-critical">
+        <span class="priority">[CRITICAL]</span>
+        <strong>Testing - Security Coverage</strong>: Add comprehensive security tests for all three vulnerable functions. Tests must verify that SQL injection attempts (e.g., '; DROP TABLE todos; --, ' OR '1'='1) are safely handled and do not execute malicious code. Without these tests, there is no verification that the security fixes work correctly. Security regression tests are essential for preventing future vulnerabilities.
+        <br><small>Files: src/todo.test.ts</small>
+      </li>
+    
+      <li class="rec-high">
+        <span class="priority">[HIGH]</span>
+        <strong>Security - Input Validation</strong>: Implement comprehensive input validation for all function parameters in the three new functions. Add checks for null/undefined, type validation (especially for searchTodosByStatus which should accept boolean, not string), format validation for userId, length limits to prevent DoS, and escaping of special characters. No validation currently exists, allowing malicious or malformed input to reach the database layer.
         <br><small>Files: src/todo.ts</small>
       </li>
     
       <li class="rec-high">
         <span class="priority">[HIGH]</span>
-        <strong>testing</strong>: Add automated integration tests in tests/todo.test.ts for searchTodos, searchTodosByStatus, and getTodosByUser.
-        <br><small>Files: src/todo.ts, tests/todo.test.ts</small>
+        <strong>Security - Authorization</strong>: Add authorization checks to getTodosByUser function to ensure users can only access their own todos, not other users' data. The function currently lacks any permission verification, violating the principle of least privilege and potentially exposing sensitive user data. Implement a mechanism to verify the requesting user ID matches the target user ID or has admin privileges.
+        <br><small>Files: src/todo.ts</small>
       </li>
     
-      <li class="rec-medium">
-        <span class="priority">[MEDIUM]</span>
-        <strong>architecture</strong>: Replace direct string concatenation with parameterized prepared statements throughout database querying layer.
-        <br><small>Files: src/todo.ts</small>
+      <li class="rec-high">
+        <span class="priority">[HIGH]</span>
+        <strong>Testing - Integration Coverage</strong>: Add integration tests for all three new functions and existing CRUD operations. Current test coverage is only 15% with no tests verifying database interactions, error handling, or data persistence. Critical paths like createTodo, updateTodoStatus, and deleteTodo have zero test coverage despite being core functionality. Integration tests with database mocking are essential to verify correct behavior.
+        <br><small>Files: src/todo.test.ts</small>
       </li>
     </ul>
 
   <footer>
-    Generated at 2026-10-30T18:39:02.786Z • Duration: 3820ms
+    Generated at 2026-10-31T00:00:00.000Z • Duration: 593245ms
   </footer>
 </body>
 </html>

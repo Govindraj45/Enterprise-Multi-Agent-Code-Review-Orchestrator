@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__github__*",
+      "mcp__eslint__*",
+      "Task",
+      "Skill",
+      "Read",
+      "Grep",
+      "Glob"
+    ]
+  },
+  "enableAllProjectMcpServers": true
+}

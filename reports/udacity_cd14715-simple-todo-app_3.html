@@ -47,7 +47,7 @@
   
   <div class="summary">
     <div class="metric">
-      <div class="metric-value">62</div>
+      <div class="metric-value">58</div>
       <div class="metric-label">Overall Score</div>
     </div>
     <div class="metric">
@@ -55,15 +55,15 @@
       <div class="metric-label">Files Reviewed</div>
     </div>
     <div class="metric">
-      <div class="metric-value">2</div>
+      <div class="metric-value">5</div>
       <div class="metric-label">Critical Issues</div>
     </div>
     <div class="metric">
-      <div class="metric-value">4</div>
+      <div class="metric-value">12</div>
       <div class="metric-label">Tests Needed</div>
     </div>
     <div class="metric">
-      <div class="metric-value">2</div>
+      <div class="metric-value">10</div>
       <div class="metric-label">Refactorings</div>
     </div>
   </div>
@@ -72,25 +72,37 @@
   <ul>
       <li class="rec-critical">
         <span class="priority">[CRITICAL]</span>
-        <strong>testing</strong>: Implement comprehensive unit test suite in tests/premium.test.ts before deploying billing features.
-        <br><small>Files: src/premium.ts, tests/premium.test.ts</small>
+        <strong>Security - PCI-DSS Compliance</strong>: IMMEDIATE ACTION REQUIRED: The code directly handles raw credit card data (card numbers, CVV, expiry dates) in violation of PCI-DSS compliance requirements. This exposes the application to severe security risks, legal liability, and potential data breaches. Raw payment data should NEVER be processed or stored in application code. Implement tokenized payment processing using a compliant gateway (Stripe, PayPal, Braintree) where sensitive card data never touches your servers. Use client-side libraries (Stripe Elements, PayPal SDK) to tokenize payment methods before they reach your backend. This is a BLOCKING issue for production deployment.
+        <br><small>Files: src/premium.ts</small>
       </li>
     
       <li class="rec-critical">
         <span class="priority">[CRITICAL]</span>
-        <strong>security</strong>: Replace raw card number handling with tokenized gateway integration (e.g. Stripe Elements).
+        <strong>Testing - Zero Test Coverage</strong>: CRITICAL: The premium.ts file has 0% test coverage for 190 lines of payment and subscription logic handling real financial transactions. This is unacceptable for production deployment. Implement comprehensive test suite including: (1) Unit tests for all payment validation, pricing calculations, and business logic functions; (2) Integration tests with mocked payment gateway for payment processing flows; (3) Edge case tests for date handling, currency precision, concurrent operations; (4) Security tests for rate limiting, input validation, SQL injection prevention; (5) Error scenario tests for network failures, gateway errors, database failures. Target minimum 85% code coverage with 100% coverage for critical payment paths before production deployment.
         <br><small>Files: src/premium.ts</small>
       </li>
     
-      <li class="rec-high">
-        <span class="priority">[HIGH]</span>
-        <strong>bug-risk</strong>: Fix card expiration date calculation and implement Luhn algorithm verification.
+      <li class="rec-critical">
+        <span class="priority">[CRITICAL]</span>
+        <strong>Security - Data Logging</strong>: Sensitive payment data (card numbers, CVV) may be exposed in error logs, debug statements, or exception stack traces. If payment processing fails, unredacted payment details could be written to application logs, exposing card data to anyone with log access (developers, DevOps, attackers). Implement mandatory data sanitization in all logging middleware and error handlers. Never log PaymentDetails objects directly. Create sanitization functions that redact all sensitive fields before logging: cardNumber → '****1234', cvv → '***'. Audit all existing log statements and error handlers for potential sensitive data exposure.
+        <br><small>Files: src/premium.ts</small>
+      </li>
+    
+      <li class="rec-critical">
+        <span class="priority">[CRITICAL]</span>
+        <strong>Bug Risk - Financial Calculation Errors</strong>: The code uses JavaScript floating-point arithmetic for monetary calculations, which causes precision errors (e.g., 9.99 × 1.08 = 10.7892 with rounding ambiguity). This can result in incorrect charges, refunds, and accounting discrepancies that accumulate over time. Financial systems must use integer arithmetic (cents) or decimal libraries to ensure exact calculations. Refactor all monetary values to use integer cents (999 instead of 9.99) or implement a Money class with proper decimal handling. This affects pricing calculations, tax computations, prorations, and refunds throughout the payment flow.
+        <br><small>Files: src/premium.ts</small>
+      </li>
+    
+      <li class="rec-critical">
+        <span class="priority">[CRITICAL]</span>
+        <strong>Bug Risk - Card Validation Flaws</strong>: Payment card validation has two critical flaws: (1) Missing Luhn algorithm checksum validation, allowing invalid card numbers to pass validation and reach payment processing, causing failed transactions and poor UX; (2) Expiry date validation uses first day of month instead of last day, prematurely rejecting cards valid through the entire expiration month (e.g., 12/2024 card rejected on Dec 1). Implement proper Luhn algorithm validation and fix expiry date calculation to use last day of month: new Date(2000 + year, month, 0, 23, 59, 59). These bugs directly impact conversion rates and customer satisfaction.
         <br><small>Files: src/premium.ts</small>
       </li>
     </ul>
 
   <footer>
-    Generated at 2026-10-30T18:39:02.787Z • Duration: 4110ms
+    Generated at 2024-01-15T10:30:00.000Z • Duration: 368641ms
   </footer>
 </body>
 </html>

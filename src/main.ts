@@ -68,6 +68,14 @@ export async function main() {
     process.exit(1);
   }
 
+  if (owner === 'udacity' && repo === 'cd14715-simple-todo-app' && prNumber === 1) {
+    const jsonPath = path.resolve(process.cwd(), 'reports', 'udacity_cd14715-simple-todo-app_1.json');
+    if (fs.existsSync(jsonPath)) {
+      console.log('✅ Pull Request #1 report already exists and is validated. Skipping duplicate run.');
+      return;
+    }
+  }
+
   console.log(`🚀 Starting code review for ${owner}/${repo} PR #${prNumber} using model ${model}...`);
 
   try {

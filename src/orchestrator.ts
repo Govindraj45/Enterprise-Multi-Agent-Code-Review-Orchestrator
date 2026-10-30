@@ -1,7 +1,7 @@
 import * as dotenv from 'dotenv';
 dotenv.config();
 
-import { query } from '@anthropic-ai/claude-agent-sdk';
+import { query, PermissionMode } from '@anthropic-ai/claude-agent-sdk';
 import { mcpServersConfig } from './config/mcp.config.js';
 import { subagents } from './agents/index.js';
 import { buildOrchestratorPrompt } from './prompts/orchestrator.prompt.js';
@@ -28,7 +28,7 @@ export interface OrchestratorOptions {
   rateLimiter?: RateLimiter;
   rateLimitConfig?: Partial<RateLimiterConfig>;
   timeoutMs?: number;
-  permissionMode?: 'default' | 'acceptEdits' | 'plan' | 'dontAsk';
+  permissionMode?: PermissionMode;
   projectRoot?: string;
   cwd?: string;
 }
@@ -58,7 +58,7 @@ export class CodeReviewOrchestrator {
   constructor(options: OrchestratorOptions = {}) {
     this.options = options;
     this.model = options.model || process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5-20250929';
-    this.maxTurns = options.maxTurns ?? 25;
+    this.maxTurns = options.maxTurns ?? (process.env.MAX_TURNS ? parseInt(process.env.MAX_TURNS, 10) : 50);
 
     if (options.rateLimiter) {
       this.rateLimiter = options.rateLimiter;
@@ -115,11 +115,13 @@ export class CodeReviewOrchestrator {
               'mcp__github__*',
               'mcp__eslint__*'
             ],
+            disallowedTools: ['Bash'],
             agents: subagents,
             mcpServers: mcpServersConfig,
             cwd: projectRoot,
             settingSources: ['project'] as ('project' | 'user' | 'local')[],
-            permissionMode: this.options.permissionMode || 'default',
+            permissionMode: this.options.permissionMode || 'bypassPermissions',
+            allowDangerouslySkipPermissions: true,
             outputFormat: {
               type: 'json_schema' as const,
               schema: ReviewReportJSONSchema
@@ -137,12 +139,8 @@ export class CodeReviewOrchestrator {
             if (Array.isArray(content)) {
               for (const block of content) {
                 if (block.type === 'tool_use') {
-                  if (block.name === 'Task') {
-                    const taskInput = block.input as { description?: string; subagent_type?: string };
-                    logger.info(`[Orchestrator] Spawning subagent: ${taskInput.subagent_type || taskInput.description || 'task'}`);
-                  } else {
-                    logger.debug(`[Orchestrator] Tool invocation: ${block.name}`);
-                  }
+                  const taskInput = block.input as { description?: string; subagent_type?: string };
+                  logger.info(`[Orchestrator] Tool invocation: ${taskInput.subagent_type || taskInput.description || block.name}`);
                 }
               }
             }
