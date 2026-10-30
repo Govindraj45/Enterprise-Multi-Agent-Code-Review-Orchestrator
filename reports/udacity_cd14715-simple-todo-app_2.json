@@ -1,0 +1,161 @@
+{
+  "pullRequest": {
+    "owner": "udacity",
+    "repo": "cd14715-simple-todo-app",
+    "number": 2
+  },
+  "fileReviews": [
+    {
+      "file": "src/todo.ts",
+      "codeQuality": {
+        "file": "src/todo.ts",
+        "issues": [
+          {
+            "line": 121,
+            "severity": "critical",
+            "category": "security",
+            "description": "Direct string interpolation of keyword in SQL query creates a severe SQL injection vulnerability in searchTodos.",
+            "suggestion": "Use parameterized queries: SELECT * FROM todos WHERE title LIKE $1 OR description LIKE $2 with [$keyword, $keyword]."
+          },
+          {
+            "line": 132,
+            "severity": "critical",
+            "category": "security",
+            "description": "Direct concatenation of completed status in SQL query creates a critical SQL injection vulnerability in searchTodosByStatus.",
+            "suggestion": "Validate input against boolean values and use parameterized query: SELECT * FROM todos WHERE completed = $1."
+          },
+          {
+            "line": 143,
+            "severity": "critical",
+            "category": "security",
+            "description": "Template literal SQL query in getTodosByUser with userId parameter allows unrestricted SQL injection.",
+            "suggestion": "Parameterize query using placeholders: SELECT t.* FROM todos t JOIN user_todos ut ON t.id = ut.todo_id WHERE ut.user_id = $1."
+          },
+          {
+            "line": 121,
+            "severity": "medium",
+            "category": "performance",
+            "description": "Wildcard LIKE queries (%keyword%) trigger full table scans and will cause performance degradation as table grows.",
+            "suggestion": "Implement full-text search indexing (e.g., PostgreSQL tsvector or SQLite FTS5) for search scalability."
+          },
+          {
+            "line": 143,
+            "severity": "low",
+            "category": "best-practice",
+            "description": "SELECT t.* projection retrieves all table columns instead of specifically required application attributes.",
+            "suggestion": "Explicitly specify the required columns in the SELECT clause to reduce payload and increase query clarity."
+          }
+        ],
+        "overallScore": 58,
+        "summary": "Critical security vulnerabilities found. All search and filter functions use raw SQL interpolation susceptible to SQL injection attacks."
+      },
+      "testCoverage": {
+        "file": "src/todo.ts",
+        "hasTests": true,
+        "testFiles": [
+          "tests/todo.test.ts"
+        ],
+        "untestedPaths": [
+          {
+            "type": "function",
+            "location": "searchTodos(keyword: string)",
+            "priority": "critical",
+            "reasoning": "Critical search query execution path with user-supplied search string is untested.",
+            "suggestedTest": "test(\"searchTodos returns matching todos and safely handles SQL metacharacters\")"
+          },
+          {
+            "type": "function",
+            "location": "searchTodosByStatus(completed: string)",
+            "priority": "critical",
+            "reasoning": "Filtering logic and status query handling have zero test coverage.",
+            "suggestedTest": "test(\"searchTodosByStatus filters active and completed items safely\")"
+          },
+          {
+            "type": "function",
+            "location": "getTodosByUser(userId: string)",
+            "priority": "high",
+            "reasoning": "User join query and multi-tenant isolation lack automated verification.",
+            "suggestedTest": "test(\"getTodosByUser returns only todos mapped to specified user ID\")"
+          },
+          {
+            "type": "edge-case",
+            "location": "searchTodos with empty and whitespace-only queries",
+            "priority": "medium",
+            "reasoning": "Empty or blank keyword strings could return unintended entire table subsets.",
+            "suggestedTest": "test(\"searchTodos handles empty string by returning empty list\")"
+          }
+        ],
+        "coverageEstimate": 45,
+        "summary": "Existing test suite only covers base CRUD operations; none of the newly added search and filter endpoints have test coverage."
+      },
+      "refactorings": {
+        "file": "src/todo.ts",
+        "suggestions": [
+          {
+            "type": "pattern-improvement",
+            "location": "src/todo.ts:115-148",
+            "impact": "high",
+            "description": "Migrate raw SQL query interpolation to Repository pattern with parameterized query abstraction.",
+            "before": "const query = `SELECT * FROM todos WHERE title LIKE '%${keyword}%'`; const rows = await db.query(query);",
+            "after": "const rows = await db.query(\"SELECT * FROM todos WHERE title LIKE $1 OR description LIKE $1\", [`%${keyword}%`]);",
+            "benefits": "Eliminates SQL injection vulnerabilities across all query execution paths."
+          },
+          {
+            "type": "simplify",
+            "location": "searchTodos and searchTodosByStatus",
+            "impact": "medium",
+            "description": "Consolidate multiple specific search functions into a unified searchCriteria query builder.",
+            "before": "export async function searchTodos(...); export async function searchTodosByStatus(...);",
+            "after": "export async function findTodos(filter: TodoFilterOptions): Promise<Todo[]>",
+            "benefits": "Reduces code duplication and allows composite search queries (e.g. search keyword AND status simultaneously)."
+          }
+        ],
+        "summary": "Recommend adopting a query builder or parameterized repository pattern to unify data access and enforce security boundaries."
+      }
+    }
+  ],
+  "summary": {
+    "totalFiles": 1,
+    "overallScore": 58,
+    "criticalIssues": 3,
+    "highPriorityTests": 3,
+    "refactoringOpportunities": 2
+  },
+  "recommendations": [
+    {
+      "priority": "critical",
+      "category": "security",
+      "description": "Remediate all SQL injection vulnerabilities in src/todo.ts immediately before merging to production.",
+      "files": [
+        "src/todo.ts"
+      ]
+    },
+    {
+      "priority": "high",
+      "category": "testing",
+      "description": "Add automated integration tests in tests/todo.test.ts for searchTodos, searchTodosByStatus, and getTodosByUser.",
+      "files": [
+        "src/todo.ts",
+        "tests/todo.test.ts"
+      ]
+    },
+    {
+      "priority": "medium",
+      "category": "architecture",
+      "description": "Replace direct string concatenation with parameterized prepared statements throughout database querying layer.",
+      "files": [
+        "src/todo.ts"
+      ]
+    }
+  ],
+  "metadata": {
+    "analyzedAt": "2026-10-30T18:39:02.786Z",
+    "duration": 3820,
+    "agentVersions": {
+      "orchestrator": "1.0.0",
+      "codeQualityAnalyzer": "1.0.0",
+      "testCoverageAnalyzer": "1.0.0",
+      "refactoringSuggester": "1.0.0"
+    }
+  }
+}
